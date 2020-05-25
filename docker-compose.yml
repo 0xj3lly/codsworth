@@ -1,0 +1,11 @@
+---
+version: "3"
+services:
+  radarr:
+    image: codsworth
+    container_name: codsworth 
+    environment:
+      - DISCORD_KEY
+      - STEAM_KEY
+      - TZ=Europe/London
+    restart: unless-stopped
