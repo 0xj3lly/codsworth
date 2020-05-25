@@ -47,16 +47,16 @@ def getAllGames(userID):
     return(data['response']['games'])
 
 
-def getMutualGames(members=users):
+def getMutualGames(sUsers):
     allGames = []
     mutualGames = []
-    for member in members:
+    for member in sUsers:
         uid = member
         games = getAllGames(uid)
         for game in games:
             allGames.append(game['name'])
     for game in allGames:
-        if allGames.count(game) == len(members):
+        if allGames.count(game) == len(sUsers):
             mutualGames.append(game)
     return set(mutualGames)
 
@@ -71,7 +71,6 @@ def getRecentGames(userID, howMany='0'):
     for game in data['response']['games']:
         recentGames.append(game['name'])
     return recentGames
-
 
 
 def getAccountValue(user):
@@ -133,15 +132,12 @@ def syncVideo(url):
     driver.find_element_by_css_selector('#table_permissions > tbody:nth-child(1) > tr:nth-child(6) > td:nth-child(2) > div:nth-child(1)').click()
     driver.quit()
     return room
-    
-    
 
 def members(ctx):
     memids = []
-    for guild in client.guilds:
-        for member in guild.members:
-            if not member.bot:
-                memids.append(member.name)
+    for member in ctx.channel.members:
+        if not member.bot:
+             memids.append(member.name)
     return memids
 
 @client.command()
@@ -156,12 +152,21 @@ async def hours(ctx, *arg):
         await ctx.send(f'{ctx.message.author.name} has played {getTotalPlaytime(ctx.message.author.name)} hours in steam')
 
 @client.command()
-async def games(ctx):
-    mems = members(ctx)
-    ids = {}
-    for item in users.items():
-        if item[1][0] in mems:
-            ids.update({item[0]:item[1]})
+async def games(ctx, *arg):
+    mems = ''
+    if arg:
+        mems = arg
+    else:
+        mems = members(ctx) 
+    ids = []
+    for key, value in users.items():
+        for mem in mems:
+            if mem.lower() == value[0].lower():
+                ids.append(key)
+            elif mem.lower() == value[1].lower():
+                ids.append(key)
+            else:
+                pass
     result = sorted(getMutualGames(ids))
     message = '\n'.join(result)
     for chunk in [message[i:i+2000] for i in range(0, len(message), 2000)]:
@@ -186,10 +191,7 @@ async def sync(ctx, arg):
 @client.command()
 async def commands(ctx):
     await ctx.send('''
-!games        - List all the games owned by members of this server
-!hours        - Shows how much of your life you've wasted
-!hours [name] - Shows how much time they have wasted
-!sync [url]   - Create a room to watch a toutube video together
+!games                        - List all the games owned by members of this server                                                          !games [names]       - List all the games owned by the people you specify                                                                   !hours                          - Shows how much of your life you've wasted                                                                 !hours [name]           - Shows how much time they have wasted                                                                              !sync [url]                   - Create a room to watch a toutube video together 
     ''')
 
 async def list_servers():
