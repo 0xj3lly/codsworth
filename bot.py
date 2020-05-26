@@ -10,6 +10,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from currency_converter import CurrencyConverter
 
 
 
@@ -19,8 +20,9 @@ BOT_PREFIX = ("?", "!")
 
 
 fireFoxOptions = webdriver.FirefoxOptions()
-fireFoxOptions.set_headless()
+fireFoxOptions.headless = True
 
+currConv = CurrencyConverter()
 
 
 users = {
@@ -72,27 +74,6 @@ def getRecentGames(userID, howMany='0'):
         recentGames.append(game['name'])
     return recentGames
 
-
-def getAccountValue(user):
-    url = 'https://store.steampowered.com/api/appdetails'
-    value = 0
-    for game in getAllGames():
-        params = dict(appids=game['appid'])
-        r = requests.get(url, params)
-        time.sleep(0.2)
-        data = json.loads(r.content)
-        app = data[f"{game['appid']}"]
-        if app['success']:
-            if app['data']['is_free']:
-                continue
-            else:
-                value += app['data']['price_overview']['initial']
-        else:
-            break
-
-    value = value / 100
-    return value
-
 def getTotalPlaytime(user):
     userID = ''
     for key, value in users.items():
@@ -117,8 +98,8 @@ def getTotalPlaytime(user):
         totalMinutes += game['playtime_forever']
     return(totalMinutes // 60)
 
-driver = webdriver.Firefox(options=fireFoxOptions)
 def syncVideo(url):
+    driver = webdriver.Firefox(options=fireFoxOptions)
     sync = "https://sync-tube.de/create"
     driver.get(sync)
     room = driver.current_url
@@ -132,6 +113,55 @@ def syncVideo(url):
     driver.find_element_by_css_selector('#table_permissions > tbody:nth-child(1) > tr:nth-child(6) > td:nth-child(2) > div:nth-child(1)').click()
     driver.quit()
     return room
+
+def accountValue(user):
+    driver = webdriver.Firefox(options=fireFoxOptions)
+    url = "https://steamdiscovery.com/calculator.php?q="
+    uid = ''
+    for key, value in users.items():
+        if user.lower() == value[0].lower():
+            uid = key
+        elif user.lower() == value[1].lower():
+            uid = key
+        else:
+            pass
+    driver.get(f'{url}{uid}')
+    WebDriverWait(driver,10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div.alert.alert-info')))
+    element = driver.find_element_by_css_selector('div.alert.alert-info')
+    paragraphs = element.find_elements_by_tag_name('p')
+    text = paragraphs[0].text
+    text = text.split('\n')
+    text = text[0].split(' ')
+    value = text[7].replace('$','')
+    value = value.replace(',','')
+    value = currConv.convert(float(value), 'USD', 'GBP')
+    driver.quit()
+    return round(value, 2)
+
+def accountShame(user):
+    driver = webdriver.Firefox(options=fireFoxOptions)
+    url = "https://steamdiscovery.com/calculator.php?q="
+    uid = ''
+    for key, value in users.items():
+        if user.lower() == value[0].lower():
+            uid = key
+        elif user.lower() == value[1].lower():
+            uid = key
+        else:
+            pass
+    driver.get(f'{url}{uid}&pile-of-shame')
+    WebDriverWait(driver,10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div.alert.alert-info')))
+    element = driver.find_element_by_css_selector('div.alert.alert-info')
+    text = element.text
+    text = text.split('\n')
+    gameCount = text[0].split(' ')
+    gameCount = gameCount[3]
+    value = text[2].split(' ')
+    value = value[7].replace('$','')
+    value = value.replace(',','')
+    value = currConv.convert(float(value), 'USD', 'GBP')
+    driver.quit()
+    return gameCount, round(value, 2)
 
 def members(ctx):
     memids = []
@@ -150,6 +180,29 @@ async def hours(ctx, *arg):
         await ctx.send(f'{arg[0].title()} has played {getTotalPlaytime(arg[0])} hours in steam')
     else:
         await ctx.send(f'{ctx.message.author.name} has played {getTotalPlaytime(ctx.message.author.name)} hours in steam')
+
+
+@client.command()
+async def value(ctx, *arg):
+    if arg:
+        await ctx.send('Working on it...')
+        await ctx.send(f'{arg[0].title()}\'s steam account is worth £{accountValue(arg[0])}')
+    else:
+        await ctx.send('Working on it...')
+        await ctx.send(f'{ctx.message.author.name}\'s steam account is worth £{accountValue(ctx.message.author.name)}')
+
+
+@client.command()
+async def shame(ctx, *arg):
+    if arg:
+        await ctx.send('Working on it...')
+        result = accountShame(arg[0])
+        await ctx.send(f'{arg[0].title()} has {result[0]} unplayed games in steam worth £{result[1]}')
+    else:
+        result = accountShame(ctx.message.author.name)
+        await ctx.send('Working on it...')
+        await ctx.send(f'{ctx.message.author.name} has {result[0]} unplayed games in steam worth £{result[1]}')
+
 
 @client.command()
 async def games(ctx, *arg):
@@ -191,7 +244,13 @@ async def sync(ctx, arg):
 @client.command()
 async def commands(ctx):
     await ctx.send('''
-!games                        - List all the games owned by members of this server                                                          !games [names]       - List all the games owned by the people you specify                                                                   !hours                          - Shows how much of your life you've wasted                                                                 !hours [name]           - Shows how much time they have wasted                                                                              !sync [url]                   - Create a room to watch a toutube video together 
+!games                        - List all the games owned by members of this server
+!games [names]       - List all the games owned by the people you specify
+!hours                          - Shows how much of your life you've wasted
+!hours [name]           - Shows how much time they have wasted
+!value [name]           - Shows how much the games in their steam account is worth
+!shame [name]           - Shows how much the games they've never played are worth
+!sync [url]                   - Create a room to watch a toutube video together 
     ''')
 
 async def list_servers():
