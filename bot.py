@@ -1,10 +1,10 @@
-import discord
-from discord.ext.commands import Bot
-import requests
 import json
 import time
 import re
 import os
+import requests
+import discord
+from discord.ext.commands import Bot
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
@@ -22,11 +22,11 @@ fireFoxOptions.headless = True
 currConv = CurrencyConverter()
 
 users = {
-    '76561198215710585':['a123oclock','Elliot'],
-    '76561198007900549':['RyansanH','Ryan'],
-    '76561198067162709':['MattWay','Matt'],
-    '76561198046451850':['Harpoon Harry','Harry'],
-    '76561197979173212':['DavidB','David']
+    '76561198215710585':['a123oclock', 'Elliot'],
+    '76561198007900549':['RyansanH', 'Ryan'],
+    '76561198067162709':['MattWay', 'Matt'],
+    '76561198046451850':['Harpoon Harry', 'Harry'],
+    '76561197979173212':['DavidB', 'David']
 }
 
 client = Bot(command_prefix=BOT_PREFIX)
@@ -34,15 +34,15 @@ client = Bot(command_prefix=BOT_PREFIX)
 def getAllGames(userID):
     url = 'https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/'
     params = dict(key=STEAM_KEY,
-                    steamid=userID,
-                    include_appinfo=True,
-                    include_played_free_games=True,
-                    appids_filter=None,
-                    include_free_sub=False
-                    )
+                  steamid=userID,
+                  include_appinfo=True,
+                  include_played_free_games=True,
+                  appids_filter=None,
+                  include_free_sub=False
+                 )
     r = requests.get(url, params)
     data = json.loads(r.content)
-    return(data['response']['games'])
+    return data['response']['games']
 
 def getMutualGames(sUsers):
     allGames = []
@@ -64,7 +64,7 @@ def getRecentGames(userID, howMany='0'):
     data = r.content
     data = json.loads(data)
     recentGames = []
-    
+
     for game in data['response']['games']:
         recentGames.append(game['name'])
     return recentGames
@@ -80,25 +80,26 @@ def getTotalPlaytime(user):
             pass
     url = 'https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/'
     params = dict(key=STEAM_KEY,
-                    steamid=userID,
-                    include_appinfo=True,
-                    include_played_free_games=True,
-                    appids_filter=None,
-                    include_free_sub=False
-                    )
+                  steamid=userID,
+                  include_appinfo=True,
+                  include_played_free_games=True,
+                  appids_filter=None,
+                  include_free_sub=False
+                 )
     r = requests.get(url, params)
     data = json.loads(r.content)
     totalMinutes = 0
     for game in data['response']['games']:
         totalMinutes += game['playtime_forever']
-    return(totalMinutes // 60)
+    return totalMinutes // 60
 
 def syncVideo(url):
     driver = webdriver.Firefox(options=fireFoxOptions)
     sync = "https://sync-tube.de/create"
     driver.get(sync)
     room = driver.current_url
-    WebDriverWait(driver,5).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'input.searchInput')))
+    WebDriverWait(driver, 5).until(ec.presence_of_element_located((By.CSS_SELECTOR,
+                                                                  'input.searchInput')))
     element = driver.find_element_by_css_selector('input.searchInput')
     element.click()
     element.send_keys(url)
@@ -121,17 +122,20 @@ def accountValue(user):
         else:
             pass
     driver.get(f'{url}{uid}')
-    WebDriverWait(driver,10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div.alert.alert-info')))
-    element = driver.find_element_by_css_selector('div.alert.alert-info')
+    WebDriverWait(driver, 10).until(ec.presence_of_element_located((\
+            By.CSS_SELECTOR,\
+            'div.alert.alert-info')))
+    element = driver.find_element_by_css_selector(\
+            'div.alert.alert-info')
     paragraphs = element.find_elements_by_tag_name('p')
     text = paragraphs[0].text
     text = text.split('\n')
     text = text[0].split(' ')
-    value = text[7].replace('$','')
-    value = value.replace(',','')
-    value = currConv.convert(float(value), 'USD', 'GBP')
+    aValue = text[7].replace('$', '')
+    aValue = aValue.replace(',', '')
+    aValue = currConv.convert(float(aValue), 'USD', 'GBP')
     driver.quit()
-    return round(value, 2)
+    return round(aValue, 2)
 
 def accountShame(user):
     driver = webdriver.Firefox(options=fireFoxOptions)
@@ -145,15 +149,17 @@ def accountShame(user):
         else:
             pass
     driver.get(f'{url}{uid}&pile-of-shame')
-    WebDriverWait(driver,10).until(ec.presence_of_element_located((By.CSS_SELECTOR, 'div.alert.alert-info')))
+    WebDriverWait(driver, 10).until(ec.presence_of_element_located((\
+            By.CSS_SELECTOR,\
+            'div.alert.alert-info')))
     element = driver.find_element_by_css_selector('div.alert.alert-info')
     text = element.text
     text = text.split('\n')
     gameCount = text[0].split(' ')
     gameCount = gameCount[3]
     value = text[2].split(' ')
-    value = value[7].replace('$','')
-    value = value.replace(',','')
+    value = value[7].replace('$', '')
+    value = value.replace(',', '')
     value = currConv.convert(float(value), 'USD', 'GBP')
     driver.quit()
     return gameCount, round(value, 2)
@@ -162,12 +168,12 @@ def members(ctx):
     memids = []
     for member in ctx.channel.members:
         if not member.bot:
-             memids.append(member.name)
+            memids.append(member.name)
     return memids
 
 @client.command()
 async def on_command_error(ctx, error):
-    await ctx.send(f'I can\'t believe you\'ve done this')
+    await ctx.send('I can\'t believe you\'ve done this')
 
 @client.command()
 async def hours(ctx, *arg):
@@ -202,7 +208,7 @@ async def games(ctx, *arg):
     if arg:
         mems = arg
     else:
-        mems = members(ctx) 
+        mems = members(ctx)
     ids = []
     for key, value in users.items():
         for mem in mems:
@@ -216,16 +222,6 @@ async def games(ctx, *arg):
     message = '\n'.join(result)
     for chunk in [message[i:i+2000] for i in range(0, len(message), 2000)]:
         await ctx.send(f'{chunk}')
-
-""" @client.event
-async def sync(message):
-    pattern = r"^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$"
-    ytLink = re.split(pattern, message.content)
-    print(ytLink)
-    if ytLink:
-        await ctx.send(f'{syncvideo(ytLink[0])}')
-    else:
-        pass """
 
 @client.command()
 async def sync(ctx, arg):
