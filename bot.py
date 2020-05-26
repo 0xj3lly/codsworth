@@ -12,18 +12,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from currency_converter import CurrencyConverter
 
-
-
 DISCORD_KEY = os.environ.get('DISCORD_KEY')
 STEAM_KEY = os.environ.get('STEAM_KEY')
 BOT_PREFIX = ("?", "!")
-
 
 fireFoxOptions = webdriver.FirefoxOptions()
 fireFoxOptions.headless = True
 
 currConv = CurrencyConverter()
-
 
 users = {
     '76561198215710585':['a123oclock','Elliot'],
@@ -47,7 +43,6 @@ def getAllGames(userID):
     r = requests.get(url, params)
     data = json.loads(r.content)
     return(data['response']['games'])
-
 
 def getMutualGames(sUsers):
     allGames = []
@@ -181,7 +176,6 @@ async def hours(ctx, *arg):
     else:
         await ctx.send(f'{ctx.message.author.name} has played {getTotalPlaytime(ctx.message.author.name)} hours in steam')
 
-
 @client.command()
 async def value(ctx, *arg):
     if arg:
@@ -190,7 +184,6 @@ async def value(ctx, *arg):
     else:
         await ctx.send('Working on it...')
         await ctx.send(f'{ctx.message.author.name}\'s steam account is worth £{accountValue(ctx.message.author.name)}')
-
 
 @client.command()
 async def shame(ctx, *arg):
@@ -202,7 +195,6 @@ async def shame(ctx, *arg):
         result = accountShame(ctx.message.author.name)
         await ctx.send('Working on it...')
         await ctx.send(f'{ctx.message.author.name} has {result[0]} unplayed games in steam worth £{result[1]}')
-
 
 @client.command()
 async def games(ctx, *arg):
@@ -224,7 +216,6 @@ async def games(ctx, *arg):
     message = '\n'.join(result)
     for chunk in [message[i:i+2000] for i in range(0, len(message), 2000)]:
         await ctx.send(f'{chunk}')
-    
 
 """ @client.event
 async def sync(message):
@@ -260,7 +251,6 @@ async def list_servers():
         for server in client.servers:
             print(server.name)
         await asyncio.sleep(600)
-
 
 client.loop.create_task(list_servers())
 client.run(DISCORD_KEY)
