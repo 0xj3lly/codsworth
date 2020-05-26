@@ -1,6 +1,7 @@
+"""
+Discord bot Codsworth - Provides multiple features mainly focused arount steam
+"""
 import json
-import time
-import re
 import os
 import requests
 import discord
@@ -31,10 +32,13 @@ users = {
 
 client = Bot(command_prefix=BOT_PREFIX)
 
-def getAllGames(userID):
+def get_all_games(user_id):
+    """
+    Gets all Steam games for a given user
+    """
     url = 'https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/'
     params = dict(key=STEAM_KEY,
-                  steamid=userID,
+                  steamid=user_id,
                   include_appinfo=True,
                   include_played_free_games=True,
                   appids_filter=None,
@@ -44,43 +48,52 @@ def getAllGames(userID):
     data = json.loads(r.content)
     return data['response']['games']
 
-def getMutualGames(sUsers):
-    allGames = []
-    mutualGames = []
-    for member in sUsers:
+def get_mutual_games(s_users):
+    """
+    Gets all the mutually owned Steam games for given users
+    """
+    all_games = []
+    mutual_games = []
+    for member in s_users:
         uid = member
-        games = getAllGames(uid)
+        games = get_all_games(uid)
         for game in games:
-            allGames.append(game['name'])
-    for game in allGames:
-        if allGames.count(game) == len(sUsers):
-            mutualGames.append(game)
-    return set(mutualGames)
+            all_games.append(game['name'])
+    for game in all_games:
+        if all_games.count(game) == len(s_users):
+            mutual_games.append(game)
+    return set(mutual_games)
 
-def getRecentGames(userID, howMany='0'):
+def get_recent_games(user_id, how_many='0'):
+    """
+    Gets the recently played Steam games for a given user
+    """
     url = 'https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v1/'
-    params = dict(key=STEAM_KEY, steamid=userID, count=howMany)
+    params = dict(key=STEAM_KEY, steamid=user_id, count=how_many)
     r = requests.get(url, params)
     data = r.content
     data = json.loads(data)
-    recentGames = []
+    recent_games = []
 
     for game in data['response']['games']:
-        recentGames.append(game['name'])
-    return recentGames
+        recent_games.append(game['name'])
+    return recent_games
 
-def getTotalPlaytime(user):
-    userID = ''
+def get_total_playtime(user):
+    """
+    Gets the total amount of hours played in Steam for a given user
+    """
+    user_id = ''
     for key, value in users.items():
         if user.lower() == value[0].lower():
-            userID = key
+            user_id = key
         elif user.lower() == value[1].lower():
-            userID = key
+            user_id = key
         else:
             pass
     url = 'https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/'
     params = dict(key=STEAM_KEY,
-                  steamid=userID,
+                  steamid=user_id,
                   include_appinfo=True,
                   include_played_free_games=True,
                   appids_filter=None,
@@ -88,29 +101,42 @@ def getTotalPlaytime(user):
                  )
     r = requests.get(url, params)
     data = json.loads(r.content)
-    totalMinutes = 0
+    total_minutes = 0
     for game in data['response']['games']:
-        totalMinutes += game['playtime_forever']
-    return totalMinutes // 60
+        total_minutes += game['playtime_forever']
+    return total_minutes // 60
 
-def syncVideo(url):
+def sync_video(url):
+    """
+    Creates a room in sync-tube.de for a given youtube URL
+    """
     driver = webdriver.Firefox(options=fireFoxOptions)
     sync = "https://sync-tube.de/create"
     driver.get(sync)
     room = driver.current_url
     WebDriverWait(driver, 5).until(ec.presence_of_element_located((By.CSS_SELECTOR,
-                                                                  'input.searchInput')))
+                                                                   'input.searchInput')))
     element = driver.find_element_by_css_selector('input.searchInput')
     element.click()
     element.send_keys(url)
     element.send_keys(Keys.ENTER)
     driver.find_element_by_id('btnSettings').click()
-    driver.find_element_by_css_selector('#table_permissions > tbody:nth-child(1) > tr:nth-child(5) > td:nth-child(2) > div:nth-child(1)').click()
-    driver.find_element_by_css_selector('#table_permissions > tbody:nth-child(1) > tr:nth-child(6) > td:nth-child(2) > div:nth-child(1)').click()
+    driver.find_element_by_css_selector(\
+        '#table_permissions > tbody:nth-child(1) > \
+        tr:nth-child(5) > td:nth-child(2) > div:nth-child(1)'\
+            ).click()
+    driver.find_element_by_css_selector(\
+        '#table_permissions > tbody:nth-child(1) > \
+        tr:nth-child(6) > td:nth-child(2) > div:nth-child(1)'\
+            ).click()
     driver.quit()
     return room
 
-def accountValue(user):
+def account_value(user):
+    """
+    Gets the current value of all the games for a given Steam account
+    (web scrape not API)
+    """
     driver = webdriver.Firefox(options=fireFoxOptions)
     url = "https://steamdiscovery.com/calculator.php?q="
     uid = ''
@@ -131,13 +157,17 @@ def accountValue(user):
     text = paragraphs[0].text
     text = text.split('\n')
     text = text[0].split(' ')
-    aValue = text[7].replace('$', '')
-    aValue = aValue.replace(',', '')
-    aValue = currConv.convert(float(aValue), 'USD', 'GBP')
+    a_value = text[7].replace('$', '')
+    a_value = a_value.replace(',', '')
+    a_value = currConv.convert(float(a_value), 'USD', 'GBP')
     driver.quit()
-    return round(aValue, 2)
+    return round(a_value, 2)
 
-def accountShame(user):
+def account_shame(user):
+    """
+    Gets the current value of all the Steam games
+    that have never been played for a given account
+    """
     driver = webdriver.Firefox(options=fireFoxOptions)
     url = "https://steamdiscovery.com/calculator.php?q="
     uid = ''
@@ -155,16 +185,19 @@ def accountShame(user):
     element = driver.find_element_by_css_selector('div.alert.alert-info')
     text = element.text
     text = text.split('\n')
-    gameCount = text[0].split(' ')
-    gameCount = gameCount[3]
+    game_count = text[0].split(' ')
+    game_count = game_count[3]
     value = text[2].split(' ')
     value = value[7].replace('$', '')
     value = value.replace(',', '')
     value = currConv.convert(float(value), 'USD', 'GBP')
     driver.quit()
-    return gameCount, round(value, 2)
+    return game_count, round(value, 2)
 
 def members(ctx):
+    """
+    Gets the current members of the discord channel
+    """
     memids = []
     for member in ctx.channel.members:
         if not member.bot:
@@ -173,37 +206,57 @@ def members(ctx):
 
 @client.command()
 async def on_command_error(ctx, error):
+    """
+    Default Discord error message
+    """
     await ctx.send('I can\'t believe you\'ve done this')
 
 @client.command()
 async def hours(ctx, *arg):
+    """
+    Gets the total hours by calling the function
+    """
     if arg:
-        await ctx.send(f'{arg[0].title()} has played {getTotalPlaytime(arg[0])} hours in steam')
+        await ctx.send(f'{arg[0].title()} has played {get_total_playtime(arg[0])} hours in steam')
     else:
-        await ctx.send(f'{ctx.message.author.name} has played {getTotalPlaytime(ctx.message.author.name)} hours in steam')
+        await ctx.send(\
+            f'{ctx.message.author.name} has played {get_total_playtime(ctx.message.author.name)}\
+             hours in steam')
 
 @client.command()
 async def value(ctx, *arg):
+    """
+    Gets the value by calling the function
+    """
     if arg:
         await ctx.send('Working on it...')
-        await ctx.send(f'{arg[0].title()}\'s steam account is worth £{accountValue(arg[0])}')
+        await ctx.send(f'{arg[0].title()}\'s steam account is worth £{account_value(arg[0])}')
     else:
         await ctx.send('Working on it...')
-        await ctx.send(f'{ctx.message.author.name}\'s steam account is worth £{accountValue(ctx.message.author.name)}')
+        await ctx.send(f'{ctx.message.author.name}\'s steam account is worth \
+            £{account_value(ctx.message.author.name)}')
 
 @client.command()
 async def shame(ctx, *arg):
+    """
+    Gets the pile of shame by calling the fucntion
+    """
     if arg:
         await ctx.send('Working on it...')
-        result = accountShame(arg[0])
-        await ctx.send(f'{arg[0].title()} has {result[0]} unplayed games in steam worth £{result[1]}')
+        result = account_shame(arg[0])
+        await ctx.send(f'{arg[0].title()} has {result[0]} \
+            unplayed games in steam worth £{result[1]}')
     else:
-        result = accountShame(ctx.message.author.name)
+        result = account_shame(ctx.message.author.name)
         await ctx.send('Working on it...')
-        await ctx.send(f'{ctx.message.author.name} has {result[0]} unplayed games in steam worth £{result[1]}')
+        await ctx.send(f'{ctx.message.author.name} has \
+            {result[0]} unplayed games in steam worth £{result[1]}')
 
 @client.command()
 async def games(ctx, *arg):
+    """
+    Gets the steam games by calling the function
+    """
     mems = ''
     if arg:
         mems = arg
@@ -218,18 +271,24 @@ async def games(ctx, *arg):
                 ids.append(key)
             else:
                 pass
-    result = sorted(getMutualGames(ids))
+    result = sorted(get_mutual_games(ids))
     message = '\n'.join(result)
     for chunk in [message[i:i+2000] for i in range(0, len(message), 2000)]:
         await ctx.send(f'{chunk}')
 
 @client.command()
 async def sync(ctx, arg):
+    """
+    Gets the sync room by calling the function
+    """
     await ctx.send('Getting the room ready...')
-    await ctx.send(f'{syncVideo(arg)}')
+    await ctx.send(f'{sync_video(arg)}')
 
 @client.command()
 async def commands(ctx):
+    """
+    Help but cleaner
+    """
     await ctx.send('''
 !games                        - List all the games owned by members of this server
 !games [names]       - List all the games owned by the people you specify
@@ -241,6 +300,9 @@ async def commands(ctx):
     ''')
 
 async def list_servers():
+    """
+    Required for discord bot
+    """
     await client.wait_until_ready()
     while not client.is_closed:
         print("Current servers:")
