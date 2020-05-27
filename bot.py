@@ -241,7 +241,10 @@ async def shame(ctx, *arg):
     if arg:
         await ctx.send('Working on it...')
         result = account_shame(arg[0])
-        await ctx.send(f'{arg[0].title()} has {result[0]} unplayed games in steam worth £{result[1]}')
+        if ctx.message.guild.name == "Watching Over":
+            await ctx.send(f'{arg[0].title()} has {result[0]} unplayed games in steam worth £{result[1]} <:MattShock:715219402760388680>')
+        else:
+            await ctx.send(f'{arg[0].title()} has {result[0]} unplayed games in steam worth £{result[1]}')
     else:
         result = account_shame(ctx.message.author.name)
         await ctx.send('Working on it...')
