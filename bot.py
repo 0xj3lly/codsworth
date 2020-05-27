@@ -1,5 +1,5 @@
 """
-Discord bot Codsworth - Provides multiple features mainly focused arount steam
+Discord bot Codsworth - Provides multiple features mainly focused around steam
 """
 import json
 import os
@@ -219,9 +219,7 @@ async def hours(ctx, *arg):
     if arg:
         await ctx.send(f'{arg[0].title()} has played {get_total_playtime(arg[0])} hours in steam')
     else:
-        await ctx.send(\
-            f'{ctx.message.author.name} has played {get_total_playtime(ctx.message.author.name)}\
-             hours in steam')
+        await ctx.send(f'{ctx.message.author.name} has played {get_total_playtime(ctx.message.author.name)} hours in steam')
 
 @client.command()
 async def value(ctx, *arg):
@@ -233,8 +231,7 @@ async def value(ctx, *arg):
         await ctx.send(f'{arg[0].title()}\'s steam account is worth £{account_value(arg[0])}')
     else:
         await ctx.send('Working on it...')
-        await ctx.send(f'{ctx.message.author.name}\'s steam account is worth \
-            £{account_value(ctx.message.author.name)}')
+        await ctx.send(f'{ctx.message.author.name}\'s steam account is worth £{account_value(ctx.message.author.name)}')
 
 @client.command()
 async def shame(ctx, *arg):
@@ -244,13 +241,11 @@ async def shame(ctx, *arg):
     if arg:
         await ctx.send('Working on it...')
         result = account_shame(arg[0])
-        await ctx.send(f'{arg[0].title()} has {result[0]} \
-            unplayed games in steam worth £{result[1]}')
+        await ctx.send(f'{arg[0].title()} has {result[0]} unplayed games in steam worth £{result[1]}')
     else:
         result = account_shame(ctx.message.author.name)
         await ctx.send('Working on it...')
-        await ctx.send(f'{ctx.message.author.name} has \
-            {result[0]} unplayed games in steam worth £{result[1]}')
+        await ctx.send(f'{ctx.message.author.name} has {result[0]} unplayed games in steam worth £{result[1]}')
 
 @client.command()
 async def games(ctx, *arg):
